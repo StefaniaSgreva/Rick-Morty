@@ -2,60 +2,80 @@
    <AppHeader title="Rick and Morty App"/>
    <main>
         <AppSearch @filterchar= "getCharacters"/>
-        <CharacterList :characters="characterList"
-        :loading="loading"/>
-        <div v-if="errormessage">
+        <CharacterList />
+        <div v-if="store.errormessage">
             <h1>Opps ! Qualcosa è andato storto</h1>
-            <p>{{errormessage}}</p>
+            <p>{{store.errormessage}}</p>
         </div>
+        <ResultCount/>
    </main>
 </template>
 
 <script>
     import axios from 'axios';
-    import AppHeader from './components/AppHeader.vue'
-    import AppSearch from './components/AppSearch.vue'
-    import CharacterList from './components/CharacterList.vue'
+    import AppHeader from './components/AppHeader.vue';
+    import AppSearch from './components/AppSearch.vue';
+    import CharacterList from './components/CharacterList.vue';
+    import ResultCount from './components/ResultCount.vue';
+
+    import {store} from './store';
+
     export default {
         components:{
-            AppHeader,
-            AppSearch,
-            CharacterList
+                AppHeader,
+                AppSearch,
+                CharacterList,
+                ResultCount
         },
         data(){
             return{
-                apiURL: 'https://rickandmortyapi.com/api/character',
-                characterList: [],
-                loading: false,
-                searchStatus: '',
-                errormessage: '',
+                store,
+                endPoint: 'character',
             }
         },
+        // watc:{
+
+        // },
         methods:{
-            getCharacters(status){ 
-                this.errormessage = '';
+            getCharacters(){ 
+                store.errormessage = '';
                 // const apiurl = (status) ? this.apiURL + '?status=' + status : this.apiURL;
                 let options = null
-                if(status){
+                if(store.search.status && store.search.name){
                     options = {
                         params:{
-                            status: status, //chiave: valore
+                            status: store.search.status, //chiave: valore
+                            name: store.search.name,
                         }
                     }
-                };
+                } else if(store.search.status){
+                    options = {
+                        params:{
+                            status: store.search.status, 
+                        }
+                    }
+                } else if(store.search.name){
+                    options = {
+                        params:{
+                            name: store.search.name,
+                        }
+                    }
+                }
                     
-                this.loading= true;
-                axios.get(this.apiURL, options).then(
+                store.loading= true;
+                const apiurl = store.apiURL + this.endPoint;
+                axios.get(apiurl, options).then(
                     (res)=>{
-                        this.characterList = [...res.data.results];
-                        console.log(this.characterList);
-                        this.loading = false;
+                        store.characterList = res.data.results;
+                        // console.log(this.characterList);
+                        store.loading = false;
                     }
                 ).catch((error)=>{
-                        this.loading = false;
-                        this.errormessage = error.message;
-                        console.log(error.message);
-                        console.log(error.response.status);
+                    store.characterList.lenght = 0;
+                    store.loading = false;
+                    store.errormessage = error.message;
+                    // console.log(error.message);
+                    // console.log(error.response.status);
                 })
             }
         },
